@@ -1,0 +1,231 @@
+#root {
+  padding: 0% !important;
+  margin-top: 0% !important;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: auto;
+  gap: 1rem;
+  padding: 1rem;
+  width: 90%;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+#header {
+  margin-bottom: 0;
+ }
+
+#subheader {
+  margin: 0;
+  padding: 0;
+}
+
+.app-title {
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.app-subtitle {
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.options-toggle {
+  background-color: transparent;
+  color: #646cff;
+  border: 1px solid #646cff;
+  padding: 0.5rem;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.options-toggle:hover {
+  background-color: rgba(100, 108, 255, 0.1);
+}
+
+.options-container {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out, margin 0.2s ease-in-out;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.options-container.open {
+  max-height: 500px;
+  opacity: 1;
+  margin: 0.75rem 0;
+}
+
+.pattern-selector {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.pattern-selector label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.pattern-selector input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.invert-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  input {
+    width: auto !important;
+  }
+}
+
+.invert-checkbox input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.invert-checkbox label {
+  cursor: pointer;
+}
+
+input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  background-color: #646cff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  width: 100%;
+}
+
+button:hover {
+  background-color: #535bf2;
+}
+
+.error {
+  color: #ff4444;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  width: 90%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+.qr-code-container img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.github-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #24292e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+  width: auto;
+}
+
+.github-button:hover {
+  background-color: #2f363d;
+}
+
+.footer {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.footer a {
+  color: #646cff;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #535bf2;
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    padding: 0.5rem;
+    width: 95%;
+  }
+
+  .github-button {
+    position: static;
+    margin-top: 1rem;
+    order: 1;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .input-container {
+    gap: 0.5rem;
+  }
+
+  input, button {
+    font-size: 0.9rem;
+  }
+
+  .qr-code-container {
+    padding: 0.5rem;
+  }
+}

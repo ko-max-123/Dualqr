@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Checker-Symmetric 図解</title>
+  <style>
+    body { font-family: sans-serif; }
+    canvas { border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Checker-Symmetric 分割方式 図解 (Canvas版)</h1>
+  <canvas id="diagram" width="600" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('diagram');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '14px sans-serif';
+
+    // 1. 全体フロー図の描画
+    const startX = 20, startY = 30;
+    ctx.fillText('1. 全体フロー', startX, startY);
+    ctx.strokeRect(startX, startY + 10, 120, 40);
+    ctx.fillText('QR1, QR2 データ生成', startX + 5, startY + 35);
+
+    // 矢印
+    ctx.beginPath();
+    ctx.moveTo(startX + 120, startY + 30);
+    ctx.lineTo(startX + 160, startY + 30);
+    ctx.stroke();
+    ctx.fillText('→', startX + 142, startY + 28);
+
+    // 2つ目のボックス
+    const x2 = startX + 160;
+    ctx.strokeRect(x2, startY + 10, 120, 40);
+    ctx.fillText('セル比較 & 同一/相違判定', x2 + 5, startY + 35);
+
+    // 2. セル細分化の描画
+    const cellX = 40, cellY = startY + 100;
+    const cellSize = 100;
+    ctx.fillText('2. 相違セルの細分化イメージ', cellX, cellY - 10);
+    // 外枠
+    ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+    // 縦線
+    ctx.beginPath();
+    ctx.moveTo(cellX + cellSize/2, cellY);
+    ctx.lineTo(cellX + cellSize/2, cellY + cellSize);
+    ctx.stroke();
+    // 横線
+    ctx.beginPath();
+    ctx.moveTo(cellX, cellY + cellSize/2);
+    ctx.lineTo(cellX + cellSize, cellY + cellSize/2);
+    ctx.stroke();
+
+    // 3. 対角色配置サンプル
+    const diagX = 40, diagY = cellY + cellSize + 80;
+    ctx.fillText('3. 対角パターン (URL1=黒, URL2=白)', diagX, diagY - 10);
+    const dSize = 60;
+    // 外枠
+    ctx.strokeRect(diagX, diagY, dSize, dSize);
+    // 左上小四角 (黒)
+    ctx.fillStyle = '#000';
+    ctx.fillRect(diagX, diagY, dSize/2, dSize/2);
+    // 右下小四角 (黒)
+    ctx.fillRect(diagX + dSize/2, diagY + dSize/2, dSize/2, dSize/2);
+    // 右上・左下 は白のまま
+    ctx.fillStyle = '#000';
+    ctx.strokeRect(diagX, diagY, dSize, dSize);
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "カラー多重QRリーダー",
+  "short_name": "QRリーダー",
+  "description": "カラー多重QRコードを読み取るアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#646cff",
+  "icons": [
+    {
+      "src": "/qr-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+} 
