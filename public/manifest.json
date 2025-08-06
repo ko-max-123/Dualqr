@@ -1,14 +1,16 @@
 {
-  "name": "カラー多重QRリーダー",
-  "short_name": "QRリーダー",
-  "description": "カラー多重QRコードを読み取るアプリ",
-  "start_url": "/",
-  "display": "standalone",
+  "name": "Dual QR Code Generator",
+  "short_name": "DualQR",
+  "description": "Generate and read dual QR codes",
+  "theme_color": "#ffffff",
   "background_color": "#ffffff",
-  "theme_color": "#646cff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
   "icons": [
     {
-      "src": "/qr-icon.svg",
+      "src": "qr-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
