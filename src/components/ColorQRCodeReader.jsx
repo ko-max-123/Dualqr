@@ -7,6 +7,14 @@ const CHANNELS = [
   { key: 'blue', label: 'Blue URL', offset: 2 },
 ]
 
+const BACK_CAMERA_LABEL_PATTERN =
+  /(back|rear|environment|world|out|背面|外|後|リア|バック|後置|后置)/i
+const FRONT_CAMERA_LABEL_PATTERN = /(front|user|face|前面|内|フロント|イン|前置)/i
+const CAMERA_VIDEO_HINTS = {
+  width: { ideal: 1280 },
+  height: { ideal: 1280 },
+}
+
 function getPercentileRange(imageData, offset) {
   const histogram = new Array(256).fill(0)
   const pixelCount = imageData.width * imageData.height
@@ -116,19 +124,86 @@ function getCameraErrorMessage(err) {
   return `カメラを起動できませんでした: ${err?.message || '原因不明のエラー'}`
 }
 
+function stopStream(stream) {
+  stream?.getTracks().forEach((track) => track.stop())
+}
+
+function isConstraintError(err) {
+  return err?.name === 'OverconstrainedError' || err?.name === 'ConstraintNotSatisfiedError'
+}
+
+function findBackCameraDevice(devices, currentDeviceId) {
+  const videoDevices = devices.filter((device) => device.kind === 'videoinput')
+  const backCamera = videoDevices.find((device) => {
+    const label = device.label || ''
+    return BACK_CAMERA_LABEL_PATTERN.test(label) && !FRONT_CAMERA_LABEL_PATTERN.test(label)
+  })
+
+  if (backCamera) return backCamera
+
+  if (videoDevices.length > 1) {
+    return videoDevices.find((device) => device.deviceId !== currentDeviceId) ?? null
+  }
+
+  return null
+}
+
+async function getStream(video) {
+  return navigator.mediaDevices.getUserMedia({ video, audio: false })
+}
+
+async function switchToBackCameraIfAvailable(stream) {
+  const track = stream.getVideoTracks()[0]
+  const settings = track?.getSettings?.() ?? {}
+
+  if (settings.facingMode === 'environment') {
+    return stream
+  }
+
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    return stream
+  }
+
+  const devices = await navigator.mediaDevices.enumerateDevices()
+  const backCamera = findBackCameraDevice(devices, settings.deviceId)
+
+  if (!backCamera) {
+    return stream
+  }
+
+  try {
+    const backStream = await getStream({
+      ...CAMERA_VIDEO_HINTS,
+      deviceId: { exact: backCamera.deviceId },
+    })
+    stopStream(stream)
+    return backStream
+  } catch {
+    return stream
+  }
+}
+
 async function requestCameraStream() {
   try {
-    return await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 1280 },
-      },
-      audio: false,
+    return await getStream({
+      ...CAMERA_VIDEO_HINTS,
+      facingMode: { exact: 'environment' },
     })
   } catch (err) {
-    if (err?.name === 'OverconstrainedError' || err?.name === 'ConstraintNotSatisfiedError') {
-      return navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+    if (!isConstraintError(err)) {
+      throw err
+    }
+  }
+
+  try {
+    const stream = await getStream({
+      ...CAMERA_VIDEO_HINTS,
+      facingMode: { ideal: 'environment' },
+    })
+    return await switchToBackCameraIfAvailable(stream)
+  } catch (err) {
+    if (isConstraintError(err)) {
+      return getStream(true)
     }
 
     throw err
@@ -263,7 +338,7 @@ function ColorQRCodeReader() {
           onClick={scanCamera}
           disabled={cameraStarting}
         >
-          {cameraReady ? 'Scan Camera' : cameraStarting ? 'カメラ起動中' : 'カメラ開始'}
+          {cameraReady ? 'Scan Camera' : cameraStarting ? '背面カメラ起動中' : '背面カメラ開始'}
         </button>
 
         <label className="file-field">
@@ -280,7 +355,7 @@ function ColorQRCodeReader() {
       <div className="reader-preview">
         <video ref={videoRef} autoPlay muted playsInline aria-label="Camera preview" />
         <canvas className="capture-canvas" ref={canvasRef} aria-label="Captured QR image" />
-        {!cameraReady && !error && <div className="camera-pending">カメラ起動中</div>}
+        {!cameraReady && !error && <div className="camera-pending">背面カメラ起動中</div>}
       </div>
 
       {error && <div className="status error">{error}</div>}
