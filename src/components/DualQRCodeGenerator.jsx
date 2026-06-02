@@ -2,7 +2,6 @@ import { useState } from 'react'
 import QRCode from 'qrcode'
 import {
   CHECKERBOARD_MASK_PATTERN,
-  CHECKERBOARD_PRIMARY_RATIO,
   CHECKERBOARD_QR_CELL_SIZE,
   QR_CANVAS_SCALE,
   QR_CELL_SIZE,
@@ -42,13 +41,14 @@ function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
   }
 
   if (splitPattern === 'checkerboard') {
-    const leftWidth = Math.round(cellSize * CHECKERBOARD_PRIMARY_RATIO)
-    const rightWidth = cellSize - leftWidth
+    const halfSize = cellSize / 2
 
     ctx.fillStyle = firstColor
-    ctx.fillRect(x, y, leftWidth, cellSize)
+    ctx.fillRect(x, y, halfSize, halfSize)
+    ctx.fillRect(x + halfSize, y + halfSize, cellSize - halfSize, cellSize - halfSize)
     ctx.fillStyle = secondColor
-    ctx.fillRect(x + leftWidth, y, rightWidth, cellSize)
+    ctx.fillRect(x + halfSize, y, cellSize - halfSize, halfSize)
+    ctx.fillRect(x, y + halfSize, halfSize, cellSize - halfSize)
     return
   }
 
