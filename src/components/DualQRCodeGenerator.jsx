@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import QRCode from 'qrcode'
 import {
+  LEFT_RIGHT_MASK_PATTERN,
+  LEFT_RIGHT_QR_CELL_SIZE,
   QR_CANVAS_SCALE,
   QR_CELL_SIZE,
   QR_VERSION_OPTIONS,
@@ -11,6 +13,27 @@ import {
 function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern) {
   const firstColor = firstCell ? '#000000' : '#ffffff'
   const secondColor = secondCell ? '#000000' : '#ffffff'
+
+  if (splitPattern === 'left-right') {
+    const leftWidth = Math.floor(cellSize / 2)
+    const transitionWidth = Math.max(2, Math.round(cellSize * 0.1))
+    const halfTransition = Math.floor(transitionWidth / 2)
+    const firstWidth = Math.max(1, leftWidth - halfTransition)
+    const secondX = x + firstWidth + transitionWidth
+    const secondWidth = Math.max(1, cellSize - firstWidth - transitionWidth)
+
+    ctx.fillStyle = firstColor
+    ctx.fillRect(x, y, firstWidth, cellSize)
+    ctx.fillStyle = secondColor
+    ctx.fillRect(secondX, y, secondWidth, cellSize)
+
+    const stripeWidth = Math.max(1, Math.floor(transitionWidth / 2))
+    ctx.fillStyle = firstColor
+    ctx.fillRect(x + firstWidth, y, stripeWidth, cellSize)
+    ctx.fillStyle = secondColor
+    ctx.fillRect(x + firstWidth + stripeWidth, y, transitionWidth - stripeWidth, cellSize)
+    return
+  }
 
   if (splitPattern === 'diagonal') {
     ctx.fillStyle = firstColor
@@ -65,7 +88,7 @@ function DualQRCodeGenerator() {
   const [url2, setUrl2] = useState('')
   const [qrCodeData, setQrCodeData] = useState('')
   const [error, setError] = useState('')
-  const [splitPattern, setSplitPattern] = useState('vertical')
+  const [splitPattern, setSplitPattern] = useState('left-right')
   const [invertUrls, setInvertUrls] = useState(false)
   const [qrVersion, setQrVersion] = useState(4)
 
@@ -77,8 +100,12 @@ function DualQRCodeGenerator() {
       }
 
       setError('')
-      const cellSize = QR_CELL_SIZE
-      const options = { errorCorrectionLevel: 'H', version: qrVersion }
+      const cellSize = splitPattern === 'left-right' ? LEFT_RIGHT_QR_CELL_SIZE : QR_CELL_SIZE
+      const options = {
+        errorCorrectionLevel: 'H',
+        version: qrVersion,
+        ...(splitPattern === 'left-right' ? { maskPattern: LEFT_RIGHT_MASK_PATTERN } : {}),
+      }
       const qr1 = await QRCode.create(url1, options)
       const qr2 = await QRCode.create(url2, options)
       const moduleCount = qr1.modules.size
@@ -100,8 +127,11 @@ function DualQRCodeGenerator() {
           const secondCell = invertUrls ? qr1.modules.get(row, col) : qr2.modules.get(row, col)
           const x = col * cellSize + margin
           const y = row * cellSize + margin
+          const keepSolid =
+            splitPattern === 'left-right' &&
+            (qr1.modules.isReserved(row, col) || qr2.modules.isReserved(row, col))
 
-          if (firstCell === secondCell) {
+          if (firstCell === secondCell || keepSolid) {
             ctx.fillStyle = firstCell ? '#000000' : '#ffffff'
             ctx.fillRect(x, y, cellSize, cellSize)
           } else {
@@ -118,14 +148,21 @@ function DualQRCodeGenerator() {
 
   return (
     <section
-      className={`tool-panel ${splitPattern === 'checkerboard' ? 'checkerboard-mode' : ''}`}
+      className={`tool-panel ${
+        splitPattern === 'checkerboard'
+          ? 'checkerboard-mode'
+          : splitPattern === 'left-right'
+            ? 'left-right-mode'
+            : ''
+      }`}
       aria-labelledby="dual-title"
     >
       <div className="tool-header">
         <h1 id="dual-title">2URL QR</h1>
         <p>
           1枚のQRに2つのURLを重ねます
-          {splitPattern === 'checkerboard' ? ' / left tilt URL1, right tilt URL2' : ''}
+          {splitPattern === 'left-right' ? ' / left URL1, right URL2' : ''}
+          {splitPattern === 'checkerboard' ? ' / checkerboard' : ''}
         </p>
       </div>
 
