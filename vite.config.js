@@ -15,7 +15,7 @@ export default defineConfig({
       manifest: {
         name: 'QR Tools',
         short_name: 'QR Tools',
-        description: 'Generate 2URL QR, color QR, and read 2URL QR images',
+        description: 'Generate 2URL QR, generate color QR, and read color QR images',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',

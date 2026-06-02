@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ColorQRCodeGenerator from './components/ColorQRCodeGenerator'
+import ColorQRCodeReader from './components/ColorQRCodeReader'
 import DualQRCodeGenerator from './components/DualQRCodeGenerator'
-import DualQRCodeReader from './components/DualQRCodeReader'
 import './App.css'
 
 const MODES = [
@@ -21,10 +21,10 @@ const MODES = [
   },
   {
     id: 'reader',
-    label: '2URL Reader',
-    title: '2URL QRリーダー',
-    component: DualQRCodeReader,
-    aliases: ['read', 'scanner', 'dual-reader', '2url-reader'],
+    label: 'Color Reader',
+    title: 'カラーQRリーダー',
+    component: ColorQRCodeReader,
+    aliases: ['read', 'scanner', 'color-reader', 'colorqr-reader', 'rgb-reader'],
   },
 ]
 
