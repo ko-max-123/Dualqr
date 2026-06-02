@@ -14,6 +14,8 @@ const CAMERA_VIDEO_HINTS = {
   width: { ideal: 1280 },
   height: { ideal: 1280 },
 }
+const CAMERA_START_TIMEOUT_MS = 10000
+const VIDEO_PLAY_TIMEOUT_MS = 5000
 
 function getPercentileRange(imageData, offset) {
   const histogram = new Array(256).fill(0)
@@ -121,7 +123,36 @@ function getCameraErrorMessage(err) {
     return '他のアプリがカメラを使用中の可能性があります。カメラアプリ等を閉じて再試行してください。'
   }
 
+  if (err?.name === 'TimeoutError') {
+    return 'カメラ起動がタイムアウトしました。ページを再読み込みするか、カメラ切替/写真を撮って読むを試してください。'
+  }
+
   return `カメラを起動できませんでした: ${err?.message || '原因不明のエラー'}`
+}
+
+function createTimeoutError(message) {
+  const err = new Error(message)
+  err.name = 'TimeoutError'
+  return err
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(createTimeoutError(message))
+    }, timeoutMs)
+
+    Promise.resolve(promise).then(
+      (value) => {
+        window.clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        window.clearTimeout(timer)
+        reject(err)
+      },
+    )
+  })
 }
 
 function stopStream(stream) {
@@ -188,7 +219,11 @@ function getActiveCameraInfo(stream, devices) {
 }
 
 async function getStream(video) {
-  return navigator.mediaDevices.getUserMedia({ video, audio: false })
+  return withTimeout(
+    navigator.mediaDevices.getUserMedia({ video, audio: false }),
+    CAMERA_START_TIMEOUT_MS,
+    'camera start timed out',
+  )
 }
 
 async function switchToBackCameraIfAvailable(stream) {
@@ -223,18 +258,6 @@ async function switchToBackCameraIfAvailable(stream) {
 }
 
 async function requestCameraStream() {
-  try {
-    const stream = await getStream({
-      ...CAMERA_VIDEO_HINTS,
-      facingMode: { exact: 'environment' },
-    })
-    return await switchToBackCameraIfAvailable(stream)
-  } catch (err) {
-    if (!isConstraintError(err)) {
-      throw err
-    }
-  }
-
   try {
     const stream = await getStream({
       ...CAMERA_VIDEO_HINTS,
@@ -282,8 +305,9 @@ function ColorQRCodeReader() {
   const attachCameraStream = useCallback(async (stream) => {
     streamRef.current = stream
     if (videoRef.current) {
+      videoRef.current.muted = true
+      videoRef.current.playsInline = true
       videoRef.current.srcObject = stream
-      await videoRef.current.play()
     }
 
     const devices = await getVideoDevices()
@@ -294,6 +318,18 @@ function ColorQRCodeReader() {
     setActiveCameraLabel(activeCamera.label)
     setCameraReady(true)
     setError('')
+
+    if (videoRef.current) {
+      try {
+        await withTimeout(
+          videoRef.current.play(),
+          VIDEO_PLAY_TIMEOUT_MS,
+          'video playback timed out',
+        )
+      } catch (err) {
+        setError(getCameraErrorMessage(err))
+      }
+    }
   }, [])
 
   const startCamera = useCallback(async () => {
