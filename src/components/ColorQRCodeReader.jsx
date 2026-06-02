@@ -141,11 +141,50 @@ function findBackCameraDevice(devices, currentDeviceId) {
 
   if (backCamera) return backCamera
 
-  if (videoDevices.length > 1) {
-    return videoDevices.find((device) => device.deviceId !== currentDeviceId) ?? null
+  if (videoDevices.length <= 1) {
+    return null
   }
 
-  return null
+  if (currentDeviceId) {
+    const otherDevices = videoDevices.filter((device) => device.deviceId !== currentDeviceId)
+    return otherDevices[otherDevices.length - 1] ?? null
+  }
+
+  return videoDevices[videoDevices.length - 1] ?? null
+}
+
+function findNextCameraDevice(devices, currentDeviceId) {
+  const videoDevices = devices.filter((device) => device.kind === 'videoinput')
+
+  if (videoDevices.length <= 1) {
+    return null
+  }
+
+  const currentIndex = videoDevices.findIndex((device) => device.deviceId === currentDeviceId)
+  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % videoDevices.length : videoDevices.length - 1
+  return videoDevices[nextIndex]
+}
+
+async function getVideoDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    return []
+  }
+
+  return (await navigator.mediaDevices.enumerateDevices()).filter(
+    (device) => device.kind === 'videoinput',
+  )
+}
+
+function getActiveCameraInfo(stream, devices) {
+  const track = stream.getVideoTracks()[0]
+  const settings = track?.getSettings?.() ?? {}
+  const activeDevice = devices.find((device) => device.deviceId === settings.deviceId)
+  const label = activeDevice?.label || track?.label || settings.facingMode || 'カメラ'
+
+  return {
+    id: activeDevice?.deviceId || settings.deviceId || '',
+    label,
+  }
 }
 
 async function getStream(video) {
@@ -185,10 +224,11 @@ async function switchToBackCameraIfAvailable(stream) {
 
 async function requestCameraStream() {
   try {
-    return await getStream({
+    const stream = await getStream({
       ...CAMERA_VIDEO_HINTS,
       facingMode: { exact: 'environment' },
     })
+    return await switchToBackCameraIfAvailable(stream)
   } catch (err) {
     if (!isConstraintError(err)) {
       throw err
@@ -203,11 +243,19 @@ async function requestCameraStream() {
     return await switchToBackCameraIfAvailable(stream)
   } catch (err) {
     if (isConstraintError(err)) {
-      return getStream(true)
+      const stream = await getStream(true)
+      return switchToBackCameraIfAvailable(stream)
     }
 
     throw err
   }
+}
+
+async function requestCameraStreamByDeviceId(deviceId) {
+  return getStream({
+    ...CAMERA_VIDEO_HINTS,
+    deviceId: { exact: deviceId },
+  })
 }
 
 function ColorQRCodeReader() {
@@ -218,6 +266,9 @@ function ColorQRCodeReader() {
   const [error, setError] = useState('')
   const [cameraReady, setCameraReady] = useState(false)
   const [cameraStarting, setCameraStarting] = useState(false)
+  const [cameraDevices, setCameraDevices] = useState([])
+  const [activeCameraId, setActiveCameraId] = useState('')
+  const [activeCameraLabel, setActiveCameraLabel] = useState('')
   const [uploadedName, setUploadedName] = useState('')
 
   const stopCamera = useCallback(() => {
@@ -226,6 +277,23 @@ function ColorQRCodeReader() {
       streamRef.current = null
     }
     setCameraReady(false)
+  }, [])
+
+  const attachCameraStream = useCallback(async (stream) => {
+    streamRef.current = stream
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+      await videoRef.current.play()
+    }
+
+    const devices = await getVideoDevices()
+    const activeCamera = getActiveCameraInfo(stream, devices)
+
+    setCameraDevices(devices)
+    setActiveCameraId(activeCamera.id)
+    setActiveCameraLabel(activeCamera.label)
+    setCameraReady(true)
+    setError('')
   }, [])
 
   const startCamera = useCallback(async () => {
@@ -239,21 +307,44 @@ function ColorQRCodeReader() {
 
       stopCamera()
       const stream = await requestCameraStream()
-
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-      }
-      setCameraReady(true)
-      setError('')
+      await attachCameraStream(stream)
     } catch (err) {
       setCameraReady(false)
       setError(getCameraErrorMessage(err))
     } finally {
       setCameraStarting(false)
     }
-  }, [stopCamera])
+  }, [attachCameraStream, stopCamera])
+
+  const switchCamera = useCallback(async () => {
+    setCameraStarting(true)
+    setError('')
+
+    try {
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('camera api unavailable')
+      }
+
+      const currentTrack = streamRef.current?.getVideoTracks()[0]
+      const currentDeviceId = currentTrack?.getSettings?.().deviceId || activeCameraId
+      const devices = cameraDevices.length ? cameraDevices : await getVideoDevices()
+      const nextCamera = findNextCameraDevice(devices, currentDeviceId)
+
+      if (!nextCamera) {
+        setError('切り替え可能なカメラが見つかりませんでした')
+        return
+      }
+
+      stopCamera()
+      const stream = await requestCameraStreamByDeviceId(nextCamera.deviceId)
+      await attachCameraStream(stream)
+    } catch (err) {
+      setCameraReady(false)
+      setError(getCameraErrorMessage(err))
+    } finally {
+      setCameraStarting(false)
+    }
+  }, [activeCameraId, attachCameraStream, cameraDevices, stopCamera])
 
   useEffect(() => {
     startCamera()
@@ -340,6 +431,21 @@ function ColorQRCodeReader() {
         >
           {cameraReady ? 'Scan Camera' : cameraStarting ? '背面カメラ起動中' : '背面カメラ開始'}
         </button>
+
+        {cameraReady && (
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={switchCamera}
+            disabled={cameraStarting}
+          >
+            カメラ切替
+          </button>
+        )}
+
+        {cameraReady && activeCameraLabel && (
+          <div className="camera-meta">使用中: {activeCameraLabel}</div>
+        )}
 
         <label className="file-field">
           <span>{uploadedName || '写真を撮って読む'}</span>
