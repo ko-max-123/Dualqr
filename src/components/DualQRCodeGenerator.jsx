@@ -43,16 +43,12 @@ function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
 
   if (splitPattern === 'checkerboard') {
     const leftWidth = Math.round(cellSize * CHECKERBOARD_PRIMARY_RATIO)
-    const topHeight = Math.round(cellSize * CHECKERBOARD_PRIMARY_RATIO)
     const rightWidth = cellSize - leftWidth
-    const bottomHeight = cellSize - topHeight
 
     ctx.fillStyle = firstColor
-    ctx.fillRect(x, y, leftWidth, topHeight)
-    ctx.fillRect(x + leftWidth, y + topHeight, rightWidth, bottomHeight)
+    ctx.fillRect(x, y, leftWidth, cellSize)
     ctx.fillStyle = secondColor
-    ctx.fillRect(x + leftWidth, y, rightWidth, topHeight)
-    ctx.fillRect(x, y + topHeight, leftWidth, bottomHeight)
+    ctx.fillRect(x + leftWidth, y, rightWidth, cellSize)
     return
   }
 
@@ -133,7 +129,7 @@ function DualQRCodeGenerator() {
         <h1 id="dual-title">2URL QR</h1>
         <p>
           1枚のQRに2つのURLを重ねます
-          {splitPattern === 'checkerboard' ? ' / checkerboard optimized' : ''}
+          {splitPattern === 'checkerboard' ? ' / left tilt URL1, right tilt URL2' : ''}
         </p>
       </div>
 

@@ -31,8 +31,8 @@ function getSamplePoints(splitPattern) {
     const secondCenter = CHECKERBOARD_PRIMARY_RATIO + (1 - CHECKERBOARD_PRIMARY_RATIO) / 2
 
     return [
-      { x: firstCenter, y: firstCenter },
-      { x: secondCenter, y: firstCenter },
+      { x: firstCenter, y: 0.5 },
+      { x: secondCenter, y: 0.5 },
     ]
   }
 
