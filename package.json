@@ -1,9 +1,8 @@
 {
-  "name": "doubleqrcode3",
+  "name": "qr-tools",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://yourusername.github.io/DualQRCode-main",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,7 +11,6 @@
     "deploy": "npm run build && git add dist && git commit -m 'Deploy to GitHub Pages' && git subtree push --prefix dist origin gh-pages"
   },
   "dependencies": {
-    "jimp": "^1.6.0",
     "jsqr": "^1.4.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",

@@ -13,15 +13,15 @@ export default defineConfig({
       },
       includeAssets: ['qr-icon.svg'],
       manifest: {
-        name: 'Dual QR Code Generator',
-        short_name: 'DualQR',
-        description: 'Generate and read dual QR codes',
+        name: 'QR Tools',
+        short_name: 'QR Tools',
+        description: 'Generate 2URL QR, color QR, and read 2URL QR images',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
-        start_url: '/',
+        start_url: '/?mode=dual',
         icons: [
           {
             src: 'qr-icon.svg',

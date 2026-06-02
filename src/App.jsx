@@ -1,100 +1,88 @@
-import { useState } from 'react'
-import QRCode from 'qrcode'
+import { useEffect, useMemo, useState } from 'react'
+import ColorQRCodeGenerator from './components/ColorQRCodeGenerator'
+import DualQRCodeGenerator from './components/DualQRCodeGenerator'
+import DualQRCodeReader from './components/DualQRCodeReader'
 import './App.css'
 
+const MODES = [
+  {
+    id: 'dual',
+    label: '2URL QR',
+    title: '2URL QR',
+    component: DualQRCodeGenerator,
+    aliases: ['2url', 'dualqr', 'dual-qr', 'generator'],
+  },
+  {
+    id: 'color',
+    label: 'Color QR',
+    title: 'カラーQR',
+    component: ColorQRCodeGenerator,
+    aliases: ['colorqr', 'color-qr', 'rgb'],
+  },
+  {
+    id: 'reader',
+    label: '2URL Reader',
+    title: '2URL QRリーダー',
+    component: DualQRCodeReader,
+    aliases: ['read', 'scanner', 'dual-reader', '2url-reader'],
+  },
+]
+
+function resolveMode() {
+  const params = new URLSearchParams(window.location.search)
+  const rawMode = (params.get('mode') || params.get('app') || 'dual').toLowerCase()
+
+  return (
+    MODES.find((mode) => mode.id === rawMode || mode.aliases.includes(rawMode))?.id ?? 'dual'
+  )
+}
+
 function App() {
-  const [url1, setUrl1] = useState('')
-  const [url2, setUrl2] = useState('')
-  const [url3, setUrl3] = useState('')
-  const [qrCodeData, setQrCodeData] = useState('')
-  const [error, setError] = useState('')
-  const [qrVersion, setQrVersion] = useState(4)
+  const [activeMode, setActiveMode] = useState(resolveMode)
 
-  const generateTripleQRCode = async () => {
-    try {
-      if (!url1 || !url2 || !url3) {
-        setError('Please enter three URLs')
-        return
-      }
-      setError('')
+  useEffect(() => {
+    const handlePopState = () => setActiveMode(resolveMode())
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
-      // Generate QR code data for all three URLs
-      const opts = { errorCorrectionLevel: 'H', version: qrVersion }
-      const qr1 = await QRCode.create(url1, opts)
-      const qr2 = await QRCode.create(url2, opts)
-      const qr3 = await QRCode.create(url3, opts)
+  const activeConfig = useMemo(
+    () => MODES.find((mode) => mode.id === activeMode) ?? MODES[0],
+    [activeMode],
+  )
+  const ActiveComponent = activeConfig.component
 
-      const sizeModules = qr1.modules.size
-      const cellSize = 10
-      const margin = 4 * cellSize
-      const pixelSize = sizeModules * cellSize + 2 * margin
-
-      const canvas = document.createElement('canvas')
-      const scale = 2
-      canvas.width = pixelSize * scale
-      canvas.height = pixelSize * scale
-      const ctx = canvas.getContext('2d', { alpha: false })
-      ctx.imageSmoothingEnabled = false
-      ctx.scale(scale, scale)
-
-      // White background
-      ctx.fillStyle = '#FFFFFF'
-      ctx.fillRect(0, 0, pixelSize, pixelSize)
-
-      // Draw each module cell with RGB mixing
-      for (let r = 0; r < sizeModules; r++) {
-        for (let c = 0; c < sizeModules; c++) {
-          const bit1 = qr1.modules.get(r, c)
-          const bit2 = qr2.modules.get(r, c)
-          const bit3 = qr3.modules.get(r, c)
-          const x = c * cellSize + margin
-          const y = r * cellSize + margin
-
-          // Determine fill color by channel
-          const R = bit1 ? 0 : 255
-          const G = bit2 ? 0 : 255
-          const B = bit3 ? 0 : 255
-          ctx.fillStyle = `rgb(${R},${G},${B})`
-          ctx.fillRect(x, y, cellSize, cellSize)
-        }
-      }
-
-      setQrCodeData(canvas.toDataURL('image/png'))
-    } catch (e) {
-      setError('Error: ' + e.message)
-    }
+  const openMode = (event, modeId) => {
+    event.preventDefault()
+    const url = new URL(window.location.href)
+    url.searchParams.set('mode', modeId)
+    window.history.pushState({}, '', url)
+    setActiveMode(modeId)
   }
 
   return (
-    <div className="app-container">
-      <h1>Triple-URL QR Code Generator</h1>
-      <div className="input-container">
-        <input type="url" placeholder="URL 1" value={url1} onChange={e => setUrl1(e.target.value)} />
-        <input type="url" placeholder="URL 2" value={url2} onChange={e => setUrl2(e.target.value)} />
-        <input type="url" placeholder="URL 3" value={url3} onChange={e => setUrl3(e.target.value)} />
-        <div className="version-selector">
-          <label>QR Version:</label>
-          {[2,4,6,8,10].map(v => (
-            <label key={v}>
-              <input
-                type="radio"
-                value={v}
-                checked={qrVersion === v}
-                onChange={e => setQrVersion(Number(e.target.value))}
-              />
-              v{v}
-            </label>
+    <main className="app-shell">
+      <header className="app-header">
+        <div>
+          <span className="eyebrow">QR Tools</span>
+          <h1>{activeConfig.title}</h1>
+        </div>
+        <nav className="mode-tabs" aria-label="QR tool mode">
+          {MODES.map((mode) => (
+            <a
+              className={`mode-tab ${mode.id === activeMode ? 'active' : ''}`}
+              href={`?mode=${mode.id}`}
+              key={mode.id}
+              onClick={(event) => openMode(event, mode.id)}
+            >
+              {mode.label}
+            </a>
           ))}
-        </div>
-        <button onClick={generateTripleQRCode}>Generate Triple QR</button>
-      </div>
-      {error && <div className="error">{error}</div>}
-      {qrCodeData && (
-        <div className="qr-container">
-          <img src={qrCodeData} alt="Triple QR Code" />
-        </div>
-      )}
-    </div>
+        </nav>
+      </header>
+
+      <ActiveComponent />
+    </main>
   )
 }
 
