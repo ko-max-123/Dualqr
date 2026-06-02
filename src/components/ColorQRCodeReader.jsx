@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
 
 const CHANNELS = [
@@ -89,6 +89,52 @@ function decodeColorQR(imageData) {
   return CHANNELS.map((channel) => decodeChannel(imageData, channel))
 }
 
+function getCameraErrorMessage(err) {
+  if (!window.isSecureContext) {
+    return [
+      'スマホのブラウザではHTTPSのページでないとカメラを起動できません。',
+      'PCのローカルIPをhttpで開いている場合は、HTTPSで公開したURLから開くか、写真を撮って読む機能を使ってください。',
+    ].join('')
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return 'このブラウザではカメラを使用できません'
+  }
+
+  if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+    return 'カメラの使用が許可されていません。ブラウザのサイト設定でカメラ許可を有効にしてください。'
+  }
+
+  if (err?.name === 'NotFoundError' || err?.name === 'DevicesNotFoundError') {
+    return '利用できるカメラが見つかりませんでした'
+  }
+
+  if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
+    return '他のアプリがカメラを使用中の可能性があります。カメラアプリ等を閉じて再試行してください。'
+  }
+
+  return `カメラを起動できませんでした: ${err?.message || '原因不明のエラー'}`
+}
+
+async function requestCameraStream() {
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 1280 },
+      },
+      audio: false,
+    })
+  } catch (err) {
+    if (err?.name === 'OverconstrainedError' || err?.name === 'ConstraintNotSatisfiedError') {
+      return navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+    }
+
+    throw err
+  }
+}
+
 function ColorQRCodeReader() {
   const canvasRef = useRef(null)
   const videoRef = useRef(null)
@@ -96,51 +142,51 @@ function ColorQRCodeReader() {
   const [results, setResults] = useState([])
   const [error, setError] = useState('')
   const [cameraReady, setCameraReady] = useState(false)
+  const [cameraStarting, setCameraStarting] = useState(false)
   const [uploadedName, setUploadedName] = useState('')
 
-  useEffect(() => {
-    let mounted = true
-
-    const startCamera = async () => {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          setError('このブラウザではカメラを使用できません')
-          return
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false,
-        })
-
-        if (!mounted) {
-          stream.getTracks().forEach((track) => track.stop())
-          return
-        }
-
-        streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-        }
-        setCameraReady(true)
-        setError('')
-      } catch (err) {
-        setCameraReady(false)
-        setError(`カメラを起動できませんでした: ${err.message}`)
-      }
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
     }
+    setCameraReady(false)
+  }, [])
 
+  const startCamera = useCallback(async () => {
+    setCameraStarting(true)
+    setError('')
+
+    try {
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('camera api unavailable')
+      }
+
+      stopCamera()
+      const stream = await requestCameraStream()
+
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+      }
+      setCameraReady(true)
+      setError('')
+    } catch (err) {
+      setCameraReady(false)
+      setError(getCameraErrorMessage(err))
+    } finally {
+      setCameraStarting(false)
+    }
+  }, [stopCamera])
+
+  useEffect(() => {
     startCamera()
 
     return () => {
-      mounted = false
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop())
-        streamRef.current = null
-      }
+      stopCamera()
     }
-  }, [])
+  }, [startCamera, stopCamera])
 
   const decodeCanvas = (sourceLabel) => {
     const canvas = canvasRef.current
@@ -160,6 +206,11 @@ function ColorQRCodeReader() {
   const scanCamera = () => {
     const video = videoRef.current
     const canvas = canvasRef.current
+
+    if (!cameraReady) {
+      startCamera()
+      return
+    }
 
     if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
       setError('カメラ映像を取得できませんでした')
@@ -206,9 +257,19 @@ function ColorQRCodeReader() {
       </div>
 
       <div className="form-grid">
-        <button className="primary-button reader-button" type="button" onClick={scanCamera}>
-          Scan Camera
+        <button
+          className="primary-button reader-button"
+          type="button"
+          onClick={scanCamera}
+          disabled={cameraStarting}
+        >
+          {cameraReady ? 'Scan Camera' : cameraStarting ? 'カメラ起動中' : 'カメラ開始'}
         </button>
+
+        <label className="file-field">
+          <span>{uploadedName || '写真を撮って読む'}</span>
+          <input type="file" accept="image/*" capture="environment" onChange={handleUpload} />
+        </label>
 
         <label className="file-field">
           <span>{uploadedName || '画像から読む'}</span>

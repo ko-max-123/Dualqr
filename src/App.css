@@ -244,6 +244,11 @@
   background: #174cd2;
 }
 
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .color-button {
   background: #1d8f66;
 }
