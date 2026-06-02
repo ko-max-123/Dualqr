@@ -41,14 +41,17 @@ function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
   }
 
   if (splitPattern === 'checkerboard') {
-    const halfSize = cellSize / 2
+    const leftWidth = Math.ceil(cellSize / 2)
+    const topHeight = Math.ceil(cellSize / 2)
+    const rightWidth = cellSize - leftWidth
+    const bottomHeight = cellSize - topHeight
 
     ctx.fillStyle = firstColor
-    ctx.fillRect(x, y, halfSize, halfSize)
-    ctx.fillRect(x + halfSize, y + halfSize, cellSize - halfSize, cellSize - halfSize)
+    ctx.fillRect(x, y, leftWidth, topHeight)
+    ctx.fillRect(x + leftWidth, y + topHeight, rightWidth, bottomHeight)
     ctx.fillStyle = secondColor
-    ctx.fillRect(x + halfSize, y, cellSize - halfSize, halfSize)
-    ctx.fillRect(x, y + halfSize, halfSize, cellSize - halfSize)
+    ctx.fillRect(x + leftWidth, y, rightWidth, topHeight)
+    ctx.fillRect(x, y + topHeight, leftWidth, bottomHeight)
     return
   }
 
