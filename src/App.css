@@ -74,10 +74,6 @@
   grid-template-columns: minmax(260px, 360px) minmax(520px, 1fr);
 }
 
-.tool-panel.left-right-mode {
-  grid-template-columns: minmax(260px, 340px) minmax(620px, 1fr);
-}
-
 .tool-header {
   grid-column: 1 / -1;
   display: flex;
@@ -331,10 +327,6 @@
 
 .checkerboard-mode .qr-output img {
   width: min(100%, 680px);
-}
-
-.left-right-mode .qr-output img {
-  width: min(100%, 940px);
 }
 
 .download-link {
