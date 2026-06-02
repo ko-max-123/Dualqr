@@ -152,6 +152,31 @@
   cursor: pointer;
 }
 
+.source-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.source-toggle button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #34465c;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.source-toggle button.active {
+  background: #9b5a16;
+  color: #ffffff;
+}
+
 .option-group {
   display: grid;
   gap: 10px;
@@ -285,6 +310,23 @@
   height: auto;
   border-radius: 6px;
   background: #ffffff;
+}
+
+.reader-preview video {
+  width: min(100%, 520px);
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  background: #101828;
+  object-fit: cover;
+}
+
+.reader-preview .capture-canvas {
+  display: none;
+}
+
+.camera-pending {
+  color: #66798f;
+  font-weight: 650;
 }
 
 .reader-results {
