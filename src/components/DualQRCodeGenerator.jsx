@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import QRCode from 'qrcode'
 import {
+  CHECKERBOARD_MASK_PATTERN,
+  CHECKERBOARD_PRIMARY_RATIO,
+  CHECKERBOARD_QR_CELL_SIZE,
   QR_CANVAS_SCALE,
   QR_CELL_SIZE,
   QR_VERSION_OPTIONS,
@@ -39,8 +42,8 @@ function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
   }
 
   if (splitPattern === 'checkerboard') {
-    const leftWidth = Math.floor(cellSize / 2)
-    const topHeight = Math.floor(cellSize / 2)
+    const leftWidth = Math.round(cellSize * CHECKERBOARD_PRIMARY_RATIO)
+    const topHeight = Math.round(cellSize * CHECKERBOARD_PRIMARY_RATIO)
     const rightWidth = cellSize - leftWidth
     const bottomHeight = cellSize - topHeight
 
@@ -77,12 +80,18 @@ function DualQRCodeGenerator() {
       }
 
       setError('')
-      const options = { errorCorrectionLevel: 'H', version: qrVersion }
+      const cellSize =
+        splitPattern === 'checkerboard' ? CHECKERBOARD_QR_CELL_SIZE : QR_CELL_SIZE
+      const options = {
+        errorCorrectionLevel: 'H',
+        version: qrVersion,
+        ...(splitPattern === 'checkerboard' ? { maskPattern: CHECKERBOARD_MASK_PATTERN } : {}),
+      }
       const qr1 = await QRCode.create(url1, options)
       const qr2 = await QRCode.create(url2, options)
       const moduleCount = qr1.modules.size
-      const margin = QUIET_ZONE_MODULES * QR_CELL_SIZE
-      const logicalSize = moduleCount * QR_CELL_SIZE + margin * 2
+      const margin = QUIET_ZONE_MODULES * cellSize
+      const logicalSize = moduleCount * cellSize + margin * 2
       const canvas = document.createElement('canvas')
       canvas.width = logicalSize * QR_CANVAS_SCALE
       canvas.height = logicalSize * QR_CANVAS_SCALE
@@ -97,14 +106,14 @@ function DualQRCodeGenerator() {
         for (let col = 0; col < moduleCount; col += 1) {
           const firstCell = invertUrls ? qr2.modules.get(row, col) : qr1.modules.get(row, col)
           const secondCell = invertUrls ? qr1.modules.get(row, col) : qr2.modules.get(row, col)
-          const x = col * QR_CELL_SIZE + margin
-          const y = row * QR_CELL_SIZE + margin
+          const x = col * cellSize + margin
+          const y = row * cellSize + margin
 
           if (firstCell === secondCell) {
             ctx.fillStyle = firstCell ? '#000000' : '#ffffff'
-            ctx.fillRect(x, y, QR_CELL_SIZE, QR_CELL_SIZE)
+            ctx.fillRect(x, y, cellSize, cellSize)
           } else {
-            drawSplitCell(ctx, x, y, QR_CELL_SIZE, firstCell, secondCell, splitPattern)
+            drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
           }
         }
       }
@@ -116,10 +125,16 @@ function DualQRCodeGenerator() {
   }
 
   return (
-    <section className="tool-panel" aria-labelledby="dual-title">
+    <section
+      className={`tool-panel ${splitPattern === 'checkerboard' ? 'checkerboard-mode' : ''}`}
+      aria-labelledby="dual-title"
+    >
       <div className="tool-header">
         <h1 id="dual-title">2URL QR</h1>
-        <p>1枚のQRに2つのURLを重ねます</p>
+        <p>
+          1枚のQRに2つのURLを重ねます
+          {splitPattern === 'checkerboard' ? ' / checkerboard optimized' : ''}
+        </p>
       </div>
 
       <div className="form-grid">

@@ -3,7 +3,7 @@
 }
 
 .app-shell {
-  width: min(1080px, calc(100% - 32px));
+  width: min(1280px, calc(100% - 32px));
   margin: 0 auto;
   padding: 32px 0 48px;
 }
@@ -68,6 +68,10 @@
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 16px 40px rgba(24, 34, 48, 0.08);
+}
+
+.tool-panel.checkerboard-mode {
+  grid-template-columns: minmax(260px, 360px) minmax(520px, 1fr);
 }
 
 .tool-header {
@@ -282,10 +286,14 @@
 }
 
 .qr-output img {
-  width: min(100%, 360px);
+  width: min(100%, 520px);
   height: auto;
   background: #ffffff;
   image-rendering: pixelated;
+}
+
+.checkerboard-mode .qr-output img {
+  width: min(100%, 680px);
 }
 
 .download-link {

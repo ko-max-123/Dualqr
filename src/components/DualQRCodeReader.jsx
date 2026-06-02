@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
 import {
   AUTO_QR_VERSION_OPTIONS,
+  CHECKERBOARD_PRIMARY_RATIO,
   QR_VERSION_OPTIONS,
   QUIET_ZONE_MODULES,
   SPLIT_PATTERN_OPTIONS,
@@ -26,9 +27,12 @@ function getSamplePoints(splitPattern) {
   }
 
   if (splitPattern === 'checkerboard') {
+    const firstCenter = CHECKERBOARD_PRIMARY_RATIO / 2
+    const secondCenter = CHECKERBOARD_PRIMARY_RATIO + (1 - CHECKERBOARD_PRIMARY_RATIO) / 2
+
     return [
-      { x: 0.25, y: 0.25 },
-      { x: 0.75, y: 0.25 },
+      { x: firstCenter, y: firstCenter },
+      { x: secondCenter, y: firstCenter },
     ]
   }
 
