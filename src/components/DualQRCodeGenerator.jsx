@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import QRCode from 'qrcode'
 import {
-  CHECKERBOARD_MASK_PATTERN,
-  CHECKERBOARD_QR_CELL_SIZE,
   QR_CANVAS_SCALE,
   QR_CELL_SIZE,
   QR_VERSION_OPTIONS,
@@ -41,8 +39,8 @@ function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
   }
 
   if (splitPattern === 'checkerboard') {
-    const leftWidth = Math.ceil(cellSize / 2)
-    const topHeight = Math.ceil(cellSize / 2)
+    const leftWidth = Math.floor(cellSize / 2)
+    const topHeight = Math.floor(cellSize / 2)
     const rightWidth = cellSize - leftWidth
     const bottomHeight = cellSize - topHeight
 
@@ -79,13 +77,8 @@ function DualQRCodeGenerator() {
       }
 
       setError('')
-      const cellSize =
-        splitPattern === 'checkerboard' ? CHECKERBOARD_QR_CELL_SIZE : QR_CELL_SIZE
-      const options = {
-        errorCorrectionLevel: 'H',
-        version: qrVersion,
-        ...(splitPattern === 'checkerboard' ? { maskPattern: CHECKERBOARD_MASK_PATTERN } : {}),
-      }
+      const cellSize = QR_CELL_SIZE
+      const options = { errorCorrectionLevel: 'H', version: qrVersion }
       const qr1 = await QRCode.create(url1, options)
       const qr2 = await QRCode.create(url2, options)
       const moduleCount = qr1.modules.size
