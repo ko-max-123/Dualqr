@@ -72,6 +72,12 @@
     linear-gradient(135deg, var(--guide-accent-soft) 0%, #ffffff 54%),
     #ffffff;
   box-shadow: 0 16px 40px rgba(24, 34, 48, 0.08);
+  overflow-wrap: anywhere;
+}
+
+.demo-guide > *,
+.tool-panel > * {
+  min-width: 0;
 }
 
 .demo-guide.color-guide {
@@ -629,7 +635,7 @@
   }
 
   .demo-guide {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
     padding: 18px;
   }
@@ -642,8 +648,9 @@
     padding: 16px;
   }
 
-  .tool-panel {
-    grid-template-columns: 1fr;
+  .tool-panel,
+  .tool-panel.checkerboard-mode {
+    grid-template-columns: minmax(0, 1fr);
     padding: 18px;
   }
 
