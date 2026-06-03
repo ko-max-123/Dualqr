@@ -65,7 +65,7 @@ function ColorQRCodeGenerator() {
   return (
     <section className="tool-panel" aria-labelledby="color-title">
       <div className="tool-header color-heading">
-        <h1 id="color-title">カラーQR</h1>
+        <h2 id="color-title">カラーQR</h2>
         <p>RGBチャンネルに3つのURLを重ねます</p>
       </div>
 

@@ -80,7 +80,7 @@ function DualQRCodeGenerator() {
   return (
     <section className="tool-panel checkerboard-mode" aria-labelledby="dual-title">
       <div className="tool-header">
-        <h1 id="dual-title">2URL QR</h1>
+        <h2 id="dual-title">2URL QR</h2>
         <p>Checkerboard + Invert Pixel Splitting 固定</p>
       </div>
 

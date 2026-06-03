@@ -454,7 +454,7 @@ function ColorQRCodeReader() {
   return (
     <section className="tool-panel color-reader-panel" aria-labelledby="reader-title">
       <div className="tool-header reader-heading">
-        <h1 id="reader-title">カラーQRリーダー</h1>
+        <h2 id="reader-title">カラーQRリーダー</h2>
         <p>RGBチャンネルを分離して3つのURLを読み取ります</p>
       </div>
 
