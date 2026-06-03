@@ -5,59 +5,22 @@ import {
   QR_CELL_SIZE,
   QR_VERSION_OPTIONS,
   QUIET_ZONE_MODULES,
-  SPLIT_PATTERN_OPTIONS,
 } from '../qrOptions'
 
-function drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern) {
+function drawCheckerboardCell(ctx, x, y, cellSize, firstCell, secondCell) {
   const firstColor = firstCell ? '#000000' : '#ffffff'
   const secondColor = secondCell ? '#000000' : '#ffffff'
-
-  if (splitPattern === 'diagonal') {
-    ctx.fillStyle = firstColor
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-    ctx.lineTo(x + cellSize, y)
-    ctx.lineTo(x + cellSize, y + cellSize)
-    ctx.fill()
-
-    ctx.fillStyle = secondColor
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-    ctx.lineTo(x, y + cellSize)
-    ctx.lineTo(x + cellSize, y + cellSize)
-    ctx.fill()
-    return
-  }
-
-  if (splitPattern === 'horizontal') {
-    const topHeight = Math.floor(cellSize / 2)
-    ctx.fillStyle = firstColor
-    ctx.fillRect(x, y, cellSize, topHeight)
-    ctx.fillStyle = secondColor
-    ctx.fillRect(x, y + topHeight, cellSize, cellSize - topHeight)
-    return
-  }
-
-  if (splitPattern === 'checkerboard') {
-    const leftWidth = Math.floor(cellSize / 2)
-    const topHeight = Math.floor(cellSize / 2)
-    const rightWidth = cellSize - leftWidth
-    const bottomHeight = cellSize - topHeight
-
-    ctx.fillStyle = firstColor
-    ctx.fillRect(x, y, leftWidth, topHeight)
-    ctx.fillRect(x + leftWidth, y + topHeight, rightWidth, bottomHeight)
-    ctx.fillStyle = secondColor
-    ctx.fillRect(x + leftWidth, y, rightWidth, topHeight)
-    ctx.fillRect(x, y + topHeight, leftWidth, bottomHeight)
-    return
-  }
-
   const leftWidth = Math.floor(cellSize / 2)
+  const topHeight = Math.floor(cellSize / 2)
+  const rightWidth = cellSize - leftWidth
+  const bottomHeight = cellSize - topHeight
+
   ctx.fillStyle = firstColor
-  ctx.fillRect(x, y, leftWidth, cellSize)
+  ctx.fillRect(x, y, leftWidth, topHeight)
+  ctx.fillRect(x + leftWidth, y + topHeight, rightWidth, bottomHeight)
   ctx.fillStyle = secondColor
-  ctx.fillRect(x + leftWidth, y, cellSize - leftWidth, cellSize)
+  ctx.fillRect(x + leftWidth, y, rightWidth, topHeight)
+  ctx.fillRect(x, y + topHeight, leftWidth, bottomHeight)
 }
 
 function DualQRCodeGenerator() {
@@ -65,8 +28,6 @@ function DualQRCodeGenerator() {
   const [url2, setUrl2] = useState('')
   const [qrCodeData, setQrCodeData] = useState('')
   const [error, setError] = useState('')
-  const [splitPattern, setSplitPattern] = useState('vertical')
-  const [invertUrls, setInvertUrls] = useState(false)
   const [qrVersion, setQrVersion] = useState(4)
 
   const generateDualQRCode = async () => {
@@ -96,8 +57,8 @@ function DualQRCodeGenerator() {
 
       for (let row = 0; row < moduleCount; row += 1) {
         for (let col = 0; col < moduleCount; col += 1) {
-          const firstCell = invertUrls ? qr2.modules.get(row, col) : qr1.modules.get(row, col)
-          const secondCell = invertUrls ? qr1.modules.get(row, col) : qr2.modules.get(row, col)
+          const firstCell = qr2.modules.get(row, col)
+          const secondCell = qr1.modules.get(row, col)
           const x = col * cellSize + margin
           const y = row * cellSize + margin
 
@@ -105,7 +66,7 @@ function DualQRCodeGenerator() {
             ctx.fillStyle = firstCell ? '#000000' : '#ffffff'
             ctx.fillRect(x, y, cellSize, cellSize)
           } else {
-            drawSplitCell(ctx, x, y, cellSize, firstCell, secondCell, splitPattern)
+            drawCheckerboardCell(ctx, x, y, cellSize, firstCell, secondCell)
           }
         }
       }
@@ -117,16 +78,10 @@ function DualQRCodeGenerator() {
   }
 
   return (
-    <section
-      className={`tool-panel ${splitPattern === 'checkerboard' ? 'checkerboard-mode' : ''}`}
-      aria-labelledby="dual-title"
-    >
+    <section className="tool-panel checkerboard-mode" aria-labelledby="dual-title">
       <div className="tool-header">
         <h1 id="dual-title">2URL QR</h1>
-        <p>
-          1枚のQRに2つのURLを重ねます
-          {splitPattern === 'checkerboard' ? ' / left tilt URL1, right tilt URL2' : ''}
-        </p>
+        <p>Checkerboard + Invert Pixel Splitting 固定</p>
       </div>
 
       <div className="form-grid">
@@ -157,24 +112,6 @@ function DualQRCodeGenerator() {
         </label>
 
         <fieldset className="option-group">
-          <legend>Pixel Split</legend>
-          <div className="radio-group">
-            {SPLIT_PATTERN_OPTIONS.map((option) => (
-              <label key={option.value}>
-                <input
-                  type="radio"
-                  name="split-pattern"
-                  value={option.value}
-                  checked={splitPattern === option.value}
-                  onChange={(event) => setSplitPattern(event.target.value)}
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset className="option-group">
           <legend>QR Version</legend>
           <div className="radio-group compact">
             {QR_VERSION_OPTIONS.map((version) => (
@@ -191,15 +128,6 @@ function DualQRCodeGenerator() {
             ))}
           </div>
         </fieldset>
-
-        <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={invertUrls}
-            onChange={(event) => setInvertUrls(event.target.checked)}
-          />
-          <span>Invert Pixel Splitting</span>
-        </label>
 
         <button className="primary-button" type="button" onClick={generateDualQRCode}>
           Generate 2URL QR
